@@ -14,6 +14,6 @@ EOF
 echo curl -k -X POST -H "Content-Type: application/json" \
 	-d @action.json \
 	 https://$host:$port/api 
-curl -k -X POST -H "Content-Type: application/json" \
+curl  -k -X POST -H "Content-Type: application/json" \
 	-d @action.json \
 	 https://$host:$port/api 

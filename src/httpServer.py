@@ -14,6 +14,7 @@ EXPECTED_TOKEN_ID = os.environ.get("SERVICE_FATHER_TOKEN_ID", "")
 
 
 def getErrorJson(service, action, completedProcess):
+    # http 500: internal server error
     err = {'service': service,
            'action': action,
            'message': f"Error while running script '{action}.sh' for service '{service}'.",
@@ -34,48 +35,84 @@ def getResponseJson(service, action, completedProcess):
     return jsonify(rsp)
 
 
+def enableService(service_name):
+    with open(f'{servicesDir}/{service_name}/enabled', 'w') as f:
+        f.write('')
+    return
+
+
+def disableService(service_name):
+    if os.path.isfile(f'{servicesDir}/{service_name}/enabled'):
+        os.remove(f'{servicesDir}/{service_name}/enabled')
+    return
+
+
 @app.route('/api', methods=['POST'])
 def perform_post():
     data = request.json
     service_name = data.get('serviceName')
     action = data.get('action')
     token_id = data.get('token', None)
-
-    # service_name = service_name.lower()
     action = action.lower()
 
     if not service_name or not action or not token_id:
+        # http 400: bad request
         return jsonify({'returncode': 400, 'message': 'Service name, action, and tokenId are required.'}), 400
 
     if token_id != EXPECTED_TOKEN_ID:
-        return jsonify({'returncode': 403, 'message': 'Incorrect tokenId. Access denied.'}), 403
+        # http 401: unauthorized
+        return jsonify({'returncode': 403, 'message': 'Incorrect tokenId. Access denied.'}), 401
+
+    if action == 'enable':
+        print(f"Enabling service '{service_name}'")
+        enableService(service_name)
+        return jsonify({'returncode': 200, 'message': f"Service '{service_name}' enabled."}), 200
+    elif action == 'disable':
+        disableService(service_name)
+        return jsonify({'returncode': 200, 'message': f"Service '{service_name}' disabled."}), 200
 
     script_path = f'{servicesDir}/{service_name}/{action}.sh'
     if not os.path.isfile(script_path):
         return jsonify({'returncode': 404, 'message': f"Script '{action}.sh' not found for service '{service_name}'."}), 404
 
+    isEnabled = os.path.isfile(f'{servicesDir}/{service_name}/enabled')
+    if not isEnabled:
+        return jsonify({'returncode': 500, 'message': f"Service '{service_name}' is disabled."}), 500
+
     completedProcess = subprocess.run(
         ['bash', script_path], capture_output=True)
     if completedProcess.returncode != 0:
+        # http 500: internal server error
         return getErrorJson(service_name, action, completedProcess), 500
+    # http 200: ok
     return getResponseJson(service_name, action, completedProcess), 200
 
+# https://localhost:26000/api/services
+# https://localhost:26000/api/services?kind=enabled
+# https://localhost:26000/api/services?kind=disabled
 
-"""
-@app.route('/api/<service_name>/<action>', methods=['GET'])
-def perform_action(service_name, action):
-    service_name = service_name.lower()
-    action = action.lower()
-    script_path = f'{scriptDir}/services/{service_name}/{action}.sh'
 
-    try:
-        subprocess.run(['bash', script_path], check=True)
-        return f"Action '{action}' performed for service '{service_name}'."
-    except FileNotFoundError:
-        return f"Script '{action}.sh' not found for service '{service_name}'."
-    except subprocess.CalledProcessError:
-        return f"Error while running script '{action}.sh' for service '{service_name}'."
-"""
+@app.route('/api/services', methods=['GET'])
+def get_services():
+    kind = request.args.get("kind", "all")
+
+    services = os.listdir(servicesDir)
+    outServices = []
+    for service in services:
+        enabled = False
+        if os.path.isfile(f'{servicesDir}/{service}/enabled'):
+            enabled = True
+        outServices.append({"service": service, "enabled": enabled})
+
+    if (kind == "enabled"):
+        outServices = list(
+            filter(lambda service: service["enabled"], outServices))
+    elif (kind == "disabled"):
+        outServices = list(
+            filter(lambda service: not service["enabled"], outServices))
+
+    return jsonify(outServices), 200
+
 
 if __name__ == '__main__':
 
