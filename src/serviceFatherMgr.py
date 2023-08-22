@@ -1,3 +1,5 @@
+import os
+from dotenv import load_dotenv
 import pprint
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -6,15 +8,15 @@ import requests
 import threading
 import time
 
-from dotenv import load_dotenv
-import os
+from urllib3.exceptions import InsecureRequestWarning
+# Suppress only the single warning from urllib3 needed.
+requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
+
 load_dotenv()  # take environment variables from .env.
 
 app = Flask(__name__)
 CORS(app)  # allow CORS for all routes
 
-# Dictionary to store the status of each node
-node_status = {}
 
 serverInfo = [
     {
@@ -39,8 +41,13 @@ serverInfo = [
     },
 ]
 
+globalStatus = {'result': []}
+
 
 def updateStatus():
+
+    # Dictionary to store the status of each node
+    node_status = []
     for server in serverInfo:
         url = f'https://{server["hostname"]}:{server["port"]}/api/services'
         # try to get the status of the node else set it to offline
@@ -48,24 +55,29 @@ def updateStatus():
             response = requests.get(url, verify=False,  timeout=1)
             if response.status_code == 200:
                 services = response.json()
-                node_status[server["name"]] = {
+                node_status.append({
+                    'name': server["name"],
                     'services': services,
                     'hostname': server['hostname'],
                     'port': server['port']
-                }
+                })
         except Exception as e:
-            node_status[server["name"]] = {
+            node_status.append({
+                'name': server["name"],
                 'status': str(e),
                 'services': [],
                 'hostname': server['hostname'],
                 'port': server['port']
-            }
+            })
+    globalStatus['result'] = node_status
+    pprint.pprint(globalStatus)
 
 
 @app.route('/status', methods=['GET'])
 def status():
     # Return the current status of all nodes
-    return jsonify(node_status)
+    pprint.pprint(globalStatus)
+    return jsonify(globalStatus)
 
 
 def updateStatusThread():
@@ -84,5 +96,5 @@ SRV_PORT = os.environ.get("SERVICE_FATHER_MGR_PORT", 15001)
 if __name__ == '__main__':
     # run updateStatus() every 5 seconds in a Thread usin python Threads
     startStatusThread()
-    pprint.pprint(node_status)
+    # pprint.pprint(node_status)
     app.run(host='0.0.0.0', port=SRV_PORT)

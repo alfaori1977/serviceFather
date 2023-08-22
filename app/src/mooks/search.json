@@ -1,0 +1,52 @@
+{
+    "result": [
+        {
+            "hostname": "localhost",
+            "name": "SF_0",
+            "port": 26000,
+            "services": [
+                {
+                    "enabled": false,
+                    "service": "sample"
+                }
+            ]
+        },
+        {
+            "hostname": "localhost",
+            "name": "SF_1",
+            "port": 26001,
+            "services": [
+                {
+                    "enabled": false,
+                    "service": "sample"
+                },
+                {
+                    "enabled": false,
+                    "service": "pnlEpoch"
+                }
+            ]
+        },
+        {
+            "hostname": "localhost",
+            "name": "SF_2",
+            "port": 26002,
+            "services": [
+                {
+                    "enabled": false,
+                    "service": "sample"
+                },
+                {
+                    "enabled": false,
+                    "service": "eventsRealayer"
+                }
+            ]
+        },
+        {
+            "hostname": "server3",
+            "name": "SF_3",
+            "port": 26002,
+            "services": [],
+            "status": "HTTPSConnectionPool(host='server3', port=26002): Max retries exceeded with url: /api/services (Caused by NewConnectionError('<urllib3.connection.VerifiedHTTPSConnection object at 0x7f2903a1b880>: Failed to establish a new connection: [Errno -2] Name or service not known'))"
+        }
+    ]
+}
