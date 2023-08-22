@@ -6,6 +6,10 @@ import requests
 import threading
 import time
 
+from dotenv import load_dotenv
+import os
+load_dotenv()  # take environment variables from .env.
+
 app = Flask(__name__)
 CORS(app)  # allow CORS for all routes
 
@@ -75,8 +79,10 @@ def startStatusThread():
     x.start()
 
 
+SRV_PORT = os.environ.get("SERVICE_FATHER_MGR_PORT", 15001)
+
 if __name__ == '__main__':
     # run updateStatus() every 5 seconds in a Thread usin python Threads
     startStatusThread()
     pprint.pprint(node_status)
-    app.run(host='0.0.0.0', port=15001)
+    app.run(host='0.0.0.0', port=SRV_PORT)
