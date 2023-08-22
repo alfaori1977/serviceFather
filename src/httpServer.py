@@ -3,6 +3,9 @@ from dotenv import load_dotenv
 import subprocess
 import os
 
+import threading
+import time
+
 load_dotenv()  # take environment variables from .env.
 app = Flask(__name__)
 fileDir = os.path.dirname(__file__)
@@ -11,6 +14,7 @@ print(f"servicesDir: {servicesDir}")
 
 PORT = os.environ.get("SERVICE_FATHER_PORT", 16000)
 EXPECTED_TOKEN_ID = os.environ.get("SERVICE_FATHER_TOKEN_ID", "")
+REPORT_IP = os.environ.get("SERVICE_FATHER_MGR_REPORT_IP", None)
 
 
 def getErrorJson(service, action, completedProcess):
@@ -114,6 +118,28 @@ def get_services():
     return jsonify(outServices), 200
 
 
-if __name__ == '__main__':
+"""
 
+def reportStatus():
+    url = f'http://{REPORT_IP}/get_my_ip'
+    ip = request.get(url).json()['ip']
+    print(f"Reporting status to {REPORT_IP} from {ip}")
+
+
+def reportStatusThread():
+    while True:
+        reportStatus()
+        time.sleep(5)
+
+
+def startReportStatusThread():
+    if REPORT_IP is None:
+        return
+
+    x = threading.Thread(target=reportStatusThread, args=())
+    x.start()
+
+"""
+if __name__ == '__main__':
+    # startReportStatusThread()
     app.run(debug=True, ssl_context='adhoc', host='0.0.0.0', port=PORT)
