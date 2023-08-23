@@ -1,11 +1,11 @@
-import logo from "./logo.svg";
 import "./App.css";
 import useServiceFatherMgr from "./hooks/useServiceFatherMgr";
 import { ServicesInfo } from "./components/services";
 
+import response from "./mooks/search.json";
+
 function App() {
   const { servicesInfo } = useServiceFatherMgr();
-  console.log(servicesInfo);
 
   return (
     <div className="page">

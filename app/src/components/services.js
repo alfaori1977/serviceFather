@@ -1,58 +1,74 @@
 import Tooltip from "react-simple-tooltip";
+import failImg from "../images/fail.png";
+import okImg from "../images/ok.png";
 
 function ListOfServices({ servicesInfo }) {
   return (
     <div id="PositionsList">
-      {servicesInfo.map((srvInfo) => {
-        return srvInfo.services.map((srv) => (
-          <div
-            className="service"
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              fontSize: "12px",
-              height: "40px",
-              minHeight: "40px",
-              maxHeight: "40px",
-              padding: "5px 0px",
-            }}
-          >
-            <Tooltip content="`{${srvInfo.hostname}:${srvInfo.port}`}">
-              <div style={{ textAlign: "center", width: "9%" }}>
-                <strong>{srvInfo.name}</strong>
-                <span></span>
-              </div>
-            </Tooltip>
-            <div style={{ textAlign: "center", width: "9%" }}>
-              {srv.service}
-            </div>
-            <div style={{ textAlign: "center", width: "9%" }}>
-              {srv.enabled ? "UP" : "DOWN"}
-            </div>
-            <button
-              style={{ textAlign: "center", width: "9%" }}
-              onClick={() => {}}
-            >
-              {srv.enabled ? "Disable" : "Enable"}
-            </button>
-
-            <div style={{ textAlign: "center", width: "70%" }}>
-              {"DETAILED INFO"}
-            </div>
-          </div>
-        ));
+      {servicesInfo.map((srvGlobalInfo) => {
+        return <Service srv={srvGlobalInfo} />;
       })}
     </div>
   );
 }
 
+function Service({ srv }) {
+  return (
+    <div
+      key={srv.id}
+      className="service"
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        fontSize: "12px",
+        height: "40px",
+        minHeight: "20px",
+        maxHeight: "20px",
+        padding: "10px 20px",
+      }}
+    >
+      <div style={{ textAlign: "center", width: "9%" }}>
+        <strong>{srv.lastUpdate}</strong>
+        <span></span>
+      </div>
+      <div style={{ textAlign: "center", width: "9%" }}>
+        <strong>{srv.service}</strong>
+        <span></span>
+      </div>
+      <div style={{ textAlign: "center", width: "9%" }}>
+        {srv.rAddr}:{srv.port}
+      </div>
+      <div style={{ textAlign: "center", width: "9%" }}>
+        {srv.enabled ? "ENABLED" : "DISABLED"}
+      </div>
+      <button style={{ textAlign: "center", width: "9%" }} onClick={() => {}}>
+        {srv.enabled ? "Disable" : "Enable"}
+      </button>
+      <div style={{ textAlign: "center", width: "9%" }}>
+        {srv.enabled ? "ENABLED" : "DISABLED"}
+      </div>
+      <div style={{ textAlign: "center", width: "9%" }}>
+        {srv.returncode > 0 ? "KO" : "OK"}
+      </div>
+      <img
+        src={srv.returncode > 0 ? failImg : okImg}
+        width="22"
+        alt="No se ve"
+      />
+
+      <div style={{ textAlign: "center", width: "70%" }}>
+        {srv.statusMessage}
+      </div>
+    </div>
+  );
+}
+
 function NoServicesResults() {
-  return <p>No se encontraron películas para esta búsqueda</p>;
+  return <p>No Service Father found.</p>;
 }
 
 export function ServicesInfo({ servicesInfo }) {
   const hasServices = servicesInfo?.length > 0;
-  console.log(servicesInfo);
   return hasServices ? (
     <ListOfServices servicesInfo={servicesInfo} />
   ) : (
