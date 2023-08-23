@@ -7,6 +7,7 @@ from datetime import datetime
 import requests
 import threading
 import time
+import json
 
 from urllib3.exceptions import InsecureRequestWarning
 # Suppress only the single warning from urllib3 needed.
@@ -41,11 +42,10 @@ serverInfo = [
     },
 ]
 
+
+"""
 globalStatus = {'result': []}
-
-
 def updateStatus():
-
     # Dictionary to store the status of each node
     node_status = []
     for server in serverInfo:
@@ -72,12 +72,38 @@ def updateStatus():
     globalStatus['result'] = node_status
     pprint.pprint(globalStatus)
 
+"""
+
+globalStatus = {}
+
+
+@app.route('/status', methods=['POST'])
+def update_status():
+    # Get the node ID and status from the request JSON data
+    data = request.get_json()
+    rAddr = request.remote_addr
+    print("rAddr: ", request)
+    print("data: ", data)
+    for srv in data:
+        srv['rAddr'] = rAddr
+        srv['lastUpdate'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        key = f"{srv['service']}@{rAddr}:{srv['port']}"
+        globalStatus[key] = srv
+
+    print("globalStatusDict: ", json.dumps(globalStatus, indent=4))
+    return jsonify({'message': 'Global Status fupdated'}), 200
+
 
 @app.route('/status', methods=['GET'])
 def status():
     # Return the current status of all nodes
     pprint.pprint(globalStatus)
-    return jsonify(globalStatus)
+    responseList = []
+    for key in globalStatus:
+        globalStatus[key]['id'] = key
+        responseList.append(globalStatus[key])
+
+    return jsonify({'result': responseList}), 200
 
 
 @app.route("/get_my_ip", methods=["GET"])
@@ -100,6 +126,6 @@ SRV_PORT = os.environ.get("SERVICE_FATHER_MGR_PORT", 15001)
 
 if __name__ == '__main__':
     # run updateStatus() every 5 seconds in a Thread usin python Threads
-    startStatusThread()
+    # startStatusThread()
     # pprint.pprint(node_status)
     app.run(host='0.0.0.0', port=SRV_PORT)

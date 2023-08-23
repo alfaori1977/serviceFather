@@ -1,10 +1,13 @@
+
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 import subprocess
 import os
 
+import requests
 import threading
 import time
+import json
 
 load_dotenv()  # take environment variables from .env.
 app = Flask(__name__)
@@ -26,7 +29,7 @@ def getErrorJson(service, action, completedProcess):
            'stdout': completedProcess.stdout.decode('utf-8'),
            'returncode': completedProcess.returncode}
 
-    return jsonify(err)
+    return err
 
 
 def getResponseJson(service, action, completedProcess):
@@ -36,7 +39,7 @@ def getResponseJson(service, action, completedProcess):
            'stderr': completedProcess.stderr.decode('utf-8'),
            'stdout': completedProcess.stdout.decode('utf-8'),
            'returncode': completedProcess.returncode}
-    return jsonify(rsp)
+    return rsp
 
 
 def enableService(service_name):
@@ -51,9 +54,9 @@ def disableService(service_name):
     return
 
 
-@app.route('/api', methods=['POST'])
-def perform_post():
-    data = request.json
+def getPostResponse(json):
+    print(f"Performing post request: {json}")
+    data = json
     service_name = data.get('serviceName')
     action = data.get('action')
     token_id = data.get('token', None)
@@ -61,28 +64,29 @@ def perform_post():
 
     if not service_name or not action or not token_id:
         # http 400: bad request
-        return jsonify({'returncode': 400, 'message': 'Service name, action, and tokenId are required.'}), 400
+        return {'returncode': 400, 'message': 'Service name, action, and tokenId are required.'}, 400
 
     if token_id != EXPECTED_TOKEN_ID:
         # http 401: unauthorized
-        return jsonify({'returncode': 403, 'message': 'Incorrect tokenId. Access denied.'}), 401
+        return {'returncode': 403, 'message': 'Incorrect tokenId. Access denied.'}, 401
 
     if action == 'enable':
         print(f"Enabling service '{service_name}'")
         enableService(service_name)
-        return jsonify({'returncode': 200, 'message': f"Service '{service_name}' enabled."}), 200
+        return {'returncode': 200, 'message': f"Service '{service_name}' enabled."}, 200
     elif action == 'disable':
         disableService(service_name)
-        return jsonify({'returncode': 200, 'message': f"Service '{service_name}' disabled."}), 200
+        return {'returncode': 200, 'message': f"Service '{service_name}' disabled."}, 200
 
     script_path = f'{servicesDir}/{service_name}/{action}.sh'
     if not os.path.isfile(script_path):
-        return jsonify({'returncode': 404, 'message': f"Script '{action}.sh' not found for service '{service_name}'."}), 404
+        return {'returncode': 404, 'message': f"Script '{action}.sh' not found for service '{service_name}'."}, 404
 
     isEnabled = os.path.isfile(f'{servicesDir}/{service_name}/enabled')
     if not isEnabled:
-        return jsonify({'returncode': 500, 'message': f"Service '{service_name}' is disabled."}), 500
+        return {'returncode': 500, 'message': f"Service '{service_name}' is disabled."}, 500
 
+    print(f"Running script '{action}.sh' for service '{service_name}'")
     completedProcess = subprocess.run(
         ['bash', script_path], capture_output=True)
     if completedProcess.returncode != 0:
@@ -91,15 +95,19 @@ def perform_post():
     # http 200: ok
     return getResponseJson(service_name, action, completedProcess), 200
 
+
+@app.route('/api', methods=['POST'])
+def perform_post():
+    json, http_code = getPostResponse(request.json)
+    return jsonify(json), http_code
+
 # https://localhost:26000/api/services
 # https://localhost:26000/api/services?kind=enabled
 # https://localhost:26000/api/services?kind=disabled
 
 
-@app.route('/api/services', methods=['GET'])
-def get_services():
-    kind = request.args.get("kind", "all")
-
+def getServices(kind='all'):
+    print(f"Getting services of kind '{kind}'")
     services = os.listdir(servicesDir)
     outServices = []
     for service in services:
@@ -114,32 +122,66 @@ def get_services():
     elif (kind == "disabled"):
         outServices = list(
             filter(lambda service: not service["enabled"], outServices))
+    return outServices
 
+
+@ app.route('/api/services', methods=['GET'])
+def get_services():
+    kind = request.args.get("kind", "all")
+    outServices = getServices(kind)
     return jsonify(outServices), 200
 
 
-"""
-
 def reportStatus():
-    url = f'http://{REPORT_IP}/get_my_ip'
-    ip = request.get(url).json()['ip']
-    print(f"Reporting status to {REPORT_IP} from {ip}")
+    # url = f'http://{REPORT_IP}/get_my_ip'
+    # ip = requests.get(url).json()['ip']
+    # print(f"Reporting status to {REPORT_IP} from {ip}", flush=True)
+    allServices = getServices()
+    globalStatus = []
+    for service in allServices:
+        serviceName = service['service']
+        enabled = service['enabled']
+        statusRequest = {"serviceName": serviceName,
+                         "action": "status",
+                         "token": EXPECTED_TOKEN_ID}
+        statusRequest, code = getPostResponse(statusRequest)
+        print(f"service: {service}")
+        print(f"statusRequest: {statusRequest}")
+        srvStatus = {
+            'port': PORT,
+            'service': serviceName,
+            'enabled': enabled,
+            'statusMessage': statusRequest['message'],
+            'returncode': statusRequest['returncode']
+        }
+        globalStatus.append(srvStatus)
 
+    statusJson = json.dumps(globalStatus)
 
-def reportStatusThread():
-    while True:
-        reportStatus()
-        time.sleep(5)
+    print(f"globalStatus: {statusJson}")
+    try:
+        response = requests.post(f'http://{REPORT_IP}/status',
+                                 json=globalStatus, verify=False, timeout=1)
+        print(f"response: {response}")
+    except Exception as e:
+        print(f"Exception: {e}")
+        print(f"Failed to report status to {REPORT_IP}", flush=True)
+        return
 
 
 def startReportStatusThread():
     if REPORT_IP is None:
         return
 
+    def reportStatusThread():
+        while True:
+            reportStatus()
+            time.sleep(20)
+
     x = threading.Thread(target=reportStatusThread, args=())
     x.start()
 
-"""
+
 if __name__ == '__main__':
-    # startReportStatusThread()
+    startReportStatusThread()
     app.run(debug=True, ssl_context='adhoc', host='0.0.0.0', port=PORT)

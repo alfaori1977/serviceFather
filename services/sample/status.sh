@@ -1,1 +1,1 @@
-ps -ef | grep sample.sh | grep -v grep
+ls -1>/dev/null
