@@ -1,6 +1,7 @@
 import Tooltip from "react-simple-tooltip";
 import failImg from "../images/fail.png";
 import okImg from "../images/ok.png";
+import unkImg from "../images/unknown.png";
 
 import startImg from "../images/start.png";
 import stopImg from "../images/stop.png";
@@ -17,6 +18,10 @@ function ListOfServices({ servicesInfo }) {
 }
 
 function Service({ srv }) {
+  const status = srv.statusMessage.includes("Script 'status.sh' not found")
+    ? "unknown"
+    : srv.returncode;
+  const statusImg = status == "unknown" ? unkImg : status > 0 ? failImg : okImg;
   return (
     <div
       key={srv.id}
@@ -54,11 +59,7 @@ function Service({ srv }) {
       <div style={{ textAlign: "center", width: "9%" }}>
         {srv.returncode > 0 ? "KO" : "OK"}
       </div>
-      <img
-        src={srv.returncode > 0 ? failImg : okImg}
-        width="22"
-        alt="No se ve"
-      />
+      <img src={statusImg} width="22" alt="No se ve" />
       <img src={startImg} width="22" alt="Start" onClick={() => {}} />
       <img src={restartImg} width="22" alt="Restart" onClick={() => {}} />
       <img src={stopImg} width="22" alt="Stop" onClick={() => {}} />
