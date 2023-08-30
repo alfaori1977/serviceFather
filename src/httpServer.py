@@ -18,6 +18,7 @@ print(f"servicesDir: {servicesDir}")
 PORT = os.environ.get("SERVICE_FATHER_PORT", 16000)
 EXPECTED_TOKEN_ID = os.environ.get("SERVICE_FATHER_TOKEN_ID", "")
 REPORT_IP = os.environ.get("SERVICE_FATHER_MGR_REPORT_IP", None)
+REPORT_INTERVAL_SECS = os.environ.get("SERVICE_FATHER_MGR_REPORT_INTERVAL", 2)
 
 
 def getErrorJson(service, action, completedProcess):
@@ -55,7 +56,7 @@ def disableService(service_name):
 
 
 def getPostResponse(json):
-    print(f"Performing post request: {json}")
+    # print(f"Performing post request: {json}")
     data = json
     service_name = data.get('serviceName')
     action = data.get('action')
@@ -71,7 +72,7 @@ def getPostResponse(json):
         return {'returncode': 403, 'message': 'Incorrect tokenId. Access denied.'}, 401
 
     if action == 'enable':
-        print(f"Enabling service '{service_name}'")
+        # print(f"Enabling service '{service_name}'")
         enableService(service_name)
         return {'returncode': 200, 'message': f"Service '{service_name}' enabled."}, 200
     elif action == 'disable':
@@ -86,19 +87,21 @@ def getPostResponse(json):
     if not isEnabled:
         return {'returncode': 500, 'message': f"Service '{service_name}' is disabled."}, 500
 
-    print(f"Running script '{action}.sh' for service '{service_name}'")
+    # print(f"Running script '{action}.sh' for service '{service_name}'")
     completedProcess = subprocess.run(
         ['bash', script_path], capture_output=True)
     if completedProcess.returncode != 0:
         # http 500: internal server error
         return getErrorJson(service_name, action, completedProcess), 500
-    # http 200: ok
+    # http 200: okq
     return getResponseJson(service_name, action, completedProcess), 200
 
 
 @app.route('/api', methods=['POST'])
 def perform_post():
     json, http_code = getPostResponse(request.json)
+    print("forcing reportStatus")
+    reportStatus()
     return jsonify(json), http_code
 
 # https://localhost:26000/api/services
@@ -107,7 +110,7 @@ def perform_post():
 
 
 def getServices(kind='all'):
-    print(f"Getting services of kind '{kind}'")
+    # print(f"Getting services of kind '{kind}'")
     services = os.listdir(servicesDir)
     outServices = []
     for service in services:
@@ -133,6 +136,8 @@ def get_services():
 
 
 def reportStatus():
+    if REPORT_IP is None:
+        return
     # url = f'http://{REPORT_IP}/get_my_ip'
     # ip = requests.get(url).json()['ip']
     # print(f"Reporting status to {REPORT_IP} from {ip}", flush=True)
@@ -145,8 +150,8 @@ def reportStatus():
                          "action": "status",
                          "token": EXPECTED_TOKEN_ID}
         statusRequest, code = getPostResponse(statusRequest)
-        print(f"service: {service}")
-        print(f"statusRequest: {statusRequest}")
+        # print(f"service: {service}")
+        # print(f"statusRequest: {statusRequest}")
         srvStatus = {
             'port': PORT,
             'service': serviceName,
@@ -158,11 +163,11 @@ def reportStatus():
 
     statusJson = json.dumps(globalStatus)
 
-    print(f"globalStatus: {statusJson}")
+    # print(f"globalStatus: {statusJson}")
     try:
         response = requests.post(f'http://{REPORT_IP}/status',
                                  json=globalStatus, verify=False, timeout=1)
-        print(f"response: {response}")
+        # print(f"response: {response}")
     except Exception as e:
         print(f"Exception: {e}")
         print(f"Failed to report status to {REPORT_IP}", flush=True)
@@ -176,7 +181,7 @@ def startReportStatusThread():
     def reportStatusThread():
         while True:
             reportStatus()
-            time.sleep(20)
+            time.sleep(REPORT_INTERVAL_SECS)
 
     x = threading.Thread(target=reportStatusThread, args=())
     x.start()

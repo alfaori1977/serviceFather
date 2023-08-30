@@ -91,10 +91,29 @@ def update_status():
         globalStatus[key] = srv
 
     print("globalStatusDict: ", json.dumps(globalStatus, indent=4))
-    return jsonify({'message': 'Global Status fupdated'}), 200
+    return jsonify({'message': 'Global Status updated'}), 200
 
 
-@app.route('/status', methods=['GET'])
+@app.route('/perform', methods=['POST'])
+def perform_post():
+    data = request.json
+    print("data: ", data)
+    sfIp = data.get('ip')
+    sfPort = data.get('port')
+    try:
+        url = f'https://{sfIp}:{sfPort}/api'
+        print(f"URL: {url}")
+        response = requests.post(f'https://{sfIp}:{sfPort}/api',
+                                 json=data, verify=False, timeout=1)
+        print(f"response: {response.json()}")
+        return response.json(), 200
+    except Exception as e:
+        print(f"Exception: {e}")
+        print(f"Failed to report status to {sfIp}:{sfPort}", flush=True)
+        return jsonify({'message': 'Error processing request'}), 500
+
+
+@ app.route('/status', methods=['GET'])
 def status():
     # Return the current status of all nodes
     pprint.pprint(globalStatus)
@@ -106,7 +125,7 @@ def status():
     return jsonify({'result': responseList}), 200
 
 
-@app.route("/get_my_ip", methods=["GET"])
+@ app.route("/get_my_ip", methods=["GET"])
 def get_my_ip():
     return jsonify({'ip': request.remote_addr}), 200
 

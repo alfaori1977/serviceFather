@@ -160,6 +160,7 @@ cython_debug/
 #.idea/
 
 action.json
+frontAction.json
 
 services/*
 !services/sample

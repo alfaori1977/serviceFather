@@ -20,8 +20,47 @@ function ListOfServices({ servicesInfo }) {
 function Service({ srv }) {
   const status = srv.statusMessage.includes("Script 'status.sh' not found")
     ? "unknown"
-    : srv.returncode;
+    : parseInt(srv.returncode);
+  console.log(srv);
   const statusImg = status == "unknown" ? unkImg : status > 0 ? failImg : okImg;
+
+  const perform = (action) => {
+    console.log("Perform", action, srv.rAddr, srv.port, srv.service);
+    const sfMgrIp = process.env.REACT_APP_SERVICE_FATHER_MGR_REPORT_IP;
+    const tokenId = process.env.REACT_APP_SERVICE_FATHER_TOKEN_ID;
+    const url = `http://${sfMgrIp}/perform`;
+
+    const headers = { "Content-Type": "application/json" };
+    const body = {
+      ip: srv.rAddr,
+      port: srv.port,
+      serviceName: srv.service,
+      action: action,
+      token: tokenId,
+    };
+    console.log("Body", body);
+    return fetch(url, {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify(body),
+    })
+      .then((response) => response.json())
+      .then((res) => console.log(res));
+  };
+
+  const start = () => {
+    perform("start");
+  };
+  const restart = () => {
+    perform("restart");
+  };
+  const kill = () => {
+    perform("kill");
+  };
+  const toggleEnabled = () => {
+    perform(srv.enabled ? "disable" : "enable");
+  };
+
   return (
     <div
       key={srv.id}
@@ -36,33 +75,31 @@ function Service({ srv }) {
         padding: "10px 20px",
       }}
     >
-      <div style={{ textAlign: "center", width: "9%" }}>
+      <div style={{ textAlign: "center", width: "15%" }}>
         <strong>{srv.lastUpdate}</strong>
         <span></span>
       </div>
-      <div style={{ textAlign: "center", width: "9%" }}>
+      <div style={{ textAlign: "center", width: "15%" }}>
         <strong>{srv.service}</strong>
         <span></span>
       </div>
-      <div style={{ textAlign: "center", width: "9%" }}>
+      <div style={{ textAlign: "center", width: "10%" }}>
         {srv.rAddr}:{srv.port}
       </div>
       <div style={{ textAlign: "center", width: "9%" }}>
         {srv.enabled ? "ENABLED" : "DISABLED"}
       </div>
-      <button style={{ textAlign: "center", width: "9%" }} onClick={() => {}}>
+      <button
+        style={{ textAlign: "center", width: "9%" }}
+        onClick={toggleEnabled}
+      >
         {srv.enabled ? "Disable" : "Enable"}
       </button>
-      <div style={{ textAlign: "center", width: "9%" }}>
-        {srv.enabled ? "ENABLED" : "DISABLED"}
-      </div>
-      <div style={{ textAlign: "center", width: "9%" }}>
-        {srv.returncode > 0 ? "KO" : "OK"}
-      </div>
-      <img src={statusImg} width="22" alt="No se ve" />
-      <img src={startImg} width="22" alt="Start" onClick={() => {}} />
-      <img src={restartImg} width="22" alt="Restart" onClick={() => {}} />
-      <img src={stopImg} width="22" alt="Stop" onClick={() => {}} />
+
+      <img src={statusImg} width="20" alt="No se ve" />
+      <img src={startImg} width="28" alt="Start" onClick={start} />
+      <img src={restartImg} width="28" alt="Restart" onClick={restart} />
+      <img src={stopImg} width="28" alt="Stop" onClick={kill} />
       <div style={{ textAlign: "center", width: "70%" }}>
         {srv.statusMessage}
       </div>
