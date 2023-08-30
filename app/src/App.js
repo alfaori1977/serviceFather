@@ -1,6 +1,7 @@
 import "./App.css";
 import useServiceFatherMgr from "./hooks/useServiceFatherMgr";
 import { ServicesInfo } from "./components/services";
+import LabeledCheckbox from "./components/labeledCheckbox";
 
 import { useState } from "react";
 
@@ -8,9 +9,19 @@ import response from "./mooks/search.json";
 
 function App() {
   const [sort, setSort] = useState(false);
-  const [hideDisabled, setHideDisabled] = useState(false);
+  const [sortByHost, setSortByHost] = useState(false);
 
-  const { servicesInfo } = useServiceFatherMgr({ sort, hideDisabled });
+  const [hideDisabled, setHideDisabled] = useState(true);
+
+  const { servicesInfo } = useServiceFatherMgr({
+    sort,
+    hideDisabled,
+    sortByHost,
+  });
+
+  const handleSortByHost = () => {
+    setSortByHost(!sortByHost);
+  };
 
   const handleSort = () => {
     setSort(!sort);
@@ -27,26 +38,18 @@ function App() {
       </header>
 
       <main>
-        <div>
-          <input
-            onChange={handleSort}
-            id={"sortCheckbox"}
-            type="checkbox"
-            checked={sort}
-          />
-          <label htmlFor={"sortCheckbox"}>Sort</label>
-        </div>
-        <div>
-          <input
-            onChange={handleHideDisabled}
-            id={"handleHideDisabled"}
-            type="checkbox"
-            checked={hideDisabled}
-          />
-          <label htmlFor={"handleHideDisabled"}>
-            {hideDisabled ? "Show Disabled" : "Hide Disabled"}
-          </label>
-        </div>
+        <LabeledCheckbox
+          label="Sort by Hostname"
+          value={sortByHost}
+          setValue={handleSortByHost}
+          id="sortByHostChk"
+        />
+        <LabeledCheckbox
+          label="Hide Disabled"
+          value={hideDisabled}
+          setValue={handleHideDisabled}
+          id="hideDisabledChk"
+        />
         <ServicesInfo servicesInfo={servicesInfo} />
       </main>
     </div>

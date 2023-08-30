@@ -21,7 +21,7 @@ function Service({ srv }) {
   const status = srv.statusMessage.includes("Script 'status.sh' not found")
     ? "unknown"
     : parseInt(srv.returncode);
-  //console.log(srv);
+  console.log(srv.id);
   const statusImg = status == "unknown" ? unkImg : status > 0 ? failImg : okImg;
 
   const perform = (action) => {
@@ -78,6 +78,9 @@ function Service({ srv }) {
       <div style={{ textAlign: "center", width: "15%" }}>
         <strong>{srv.lastUpdate}</strong>
         <span></span>
+      </div>
+      <div style={{ textAlign: "center", width: "12%" }}>
+        <strong>{srv.hostname}</strong>
       </div>
       <div style={{ textAlign: "center", width: "15%" }}>
         <strong>{srv.service}</strong>

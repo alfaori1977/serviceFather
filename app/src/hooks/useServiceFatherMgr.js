@@ -25,7 +25,7 @@ export default function useServiceFatherMgr({ hideDisabled, sort }) {
 
   const sortedServices = useMemo(() => {
     return sort
-      ? [...services].sort((a, b) => a.service.localeCompare(b.service))
+      ? [...services].sort((a, b) => a.hostname.localeCompare(b.hostname))
       : services;
   }, [sort, services]);
 

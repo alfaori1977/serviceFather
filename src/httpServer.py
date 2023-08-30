@@ -8,6 +8,7 @@ import requests
 import threading
 import time
 import json
+import platform
 
 load_dotenv()  # take environment variables from .env.
 app = Flask(__name__)
@@ -19,6 +20,7 @@ PORT = os.environ.get("SERVICE_FATHER_PORT", 16000)
 EXPECTED_TOKEN_ID = os.environ.get("SERVICE_FATHER_TOKEN_ID", "")
 REPORT_IP = os.environ.get("SERVICE_FATHER_MGR_REPORT_IP", None)
 REPORT_INTERVAL_SECS = os.environ.get("SERVICE_FATHER_MGR_REPORT_INTERVAL", 2)
+HOSTNAME = platform.node()
 
 
 def getErrorJson(service, action, completedProcess):
@@ -153,6 +155,7 @@ def reportStatus():
         # print(f"service: {service}")
         # print(f"statusRequest: {statusRequest}")
         srvStatus = {
+            'hostname': HOSTNAME,
             'port': PORT,
             'service': serviceName,
             'enabled': enabled,
