@@ -3,7 +3,11 @@ import useSWR from "swr";
 
 import response from "../mooks/search.json";
 
-export default function useServiceFatherMgr({ hideDisabled, sort }) {
+export default function useServiceFatherMgr({
+  hideDisabled,
+  sort,
+  sortByHost,
+}) {
   const [services, setServices] = useState([]);
   const sfMgrIp = process.env.REACT_APP_SERVICE_FATHER_MGR_REPORT_IP;
   const fetchStatus = (...args) => {
@@ -24,10 +28,11 @@ export default function useServiceFatherMgr({ hideDisabled, sort }) {
   );*/
 
   const sortedServices = useMemo(() => {
-    return sort
+    console.log("sorssst", sortByHost);
+    return sortByHost
       ? [...services].sort((a, b) => a.hostname.localeCompare(b.hostname))
       : services;
-  }, [sort, services]);
+  }, [sortByHost, services]);
 
   const filteredservices = useMemo(() => {
     //console.log("hideDisabled", sortedServices);
