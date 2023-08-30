@@ -5,10 +5,10 @@ import response from "../mooks/search.json";
 
 export default function useServiceFatherMgr() {
   const [services, setServices] = useState([]);
-
+  const sfMgrIp = process.env.REACT_APP_SERVICE_FATHER_MGR_REPORT_IP;
   const fetchStatus = (...args) => {
     const [id] = args;
-    const url = "http://localhost:15000/status";
+    const url = `http://${sfMgrIp}/status`;
     return fetch(url)
       .then((response) => response.json())
       .then((res) => setServices(res.result))
