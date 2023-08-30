@@ -21,7 +21,7 @@ function Service({ srv }) {
   const status = srv.statusMessage.includes("Script 'status.sh' not found")
     ? "unknown"
     : parseInt(srv.returncode);
-  console.log(srv);
+  //console.log(srv);
   const statusImg = status == "unknown" ? unkImg : status > 0 ? failImg : okImg;
 
   const perform = (action) => {
@@ -90,7 +90,7 @@ function Service({ srv }) {
         {srv.enabled ? "ENABLED" : "DISABLED"}
       </div>
       <button
-        style={{ textAlign: "center", width: "9%" }}
+        style={{ textAlign: "center", width: "5%" }}
         onClick={toggleEnabled}
       >
         {srv.enabled ? "Disable" : "Enable"}
