@@ -9,6 +9,7 @@ import threading
 import time
 import json
 import platform
+import datetime
 
 load_dotenv()  # take environment variables from .env.
 app = Flask(__name__)
@@ -21,7 +22,9 @@ EXPECTED_TOKEN_ID = os.environ.get("SERVICE_FATHER_TOKEN_ID", "")
 REPORT_IP = os.environ.get("SERVICE_FATHER_MGR_REPORT_IP", None)
 REPORT_INTERVAL_SECS = os.environ.get("SERVICE_FATHER_MGR_REPORT_INTERVAL", 2)
 HOSTNAME = platform.node()
+MAX_KAP_OFFSET = os.environ.get("MAX_SERVICES_KAP_OFFSET_SECONDS", 10)
 
+serviceStatus = {}
 
 def getErrorJson(service, action, completedProcess):
     # http 500: internal server error
@@ -105,6 +108,35 @@ def perform_post():
     print("forcing reportStatus")
     reportStatus()
     return jsonify(json), http_code
+
+@app.route('/api/kap', methods=['POST'])
+def perform_kap():
+    data = request.json
+    serviceName = data.get('serviceName')
+    status = data.get('status','')
+    kapTime = datetime.datetime.now()
+    print(f"KAP: {serviceName} {status} {kapTime}")
+    serviceStatus[serviceName] = {'status': status, 'time': kapTime}    
+    return jsonify({'returncode': 200, 'message': f"KAP: {serviceName} {status} {kapTime}"}), 200
+
+def calculateKapStatus():
+    for serviceName in serviceStatus:
+        kapTime = serviceStatus[serviceName]['time']
+        now = datetime.datetime.now()
+        delta = now - kapTime
+        serviceStatus[serviceName]['kapDelta'] = delta.seconds
+        serviceStatus[serviceName]['kapOk'] = delta.seconds <= MAX_KAP_OFFSET
+
+@app.route('/api/kap', methods=['GET'])
+def get_kap():
+    serviceName = request.args.get("serviceName", None)
+    calculateKapStatus()
+    if serviceName is None:
+        return jsonify(serviceStatus), 200
+    else:
+        return jsonify(serviceStatus[serviceName]), 200
+
+
 
 # https://localhost:26000/api/services
 # https://localhost:26000/api/services?kind=enabled
