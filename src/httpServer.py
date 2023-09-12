@@ -22,7 +22,7 @@ EXPECTED_TOKEN_ID = os.environ.get("SERVICE_FATHER_TOKEN_ID", "")
 REPORT_IP = os.environ.get("SERVICE_FATHER_MGR_REPORT_IP", None)
 REPORT_INTERVAL_SECS = os.environ.get("SERVICE_FATHER_MGR_REPORT_INTERVAL", 2)
 HOSTNAME = platform.node()
-MAX_KAP_OFFSET = os.environ.get("MAX_SERVICES_KAP_OFFSET_SECONDS", 10)
+MAX_KAP_OFFSET = int(os.environ.get("MAX_SERVICES_KAP_OFFSET_SECONDS", 10))
 
 serviceStatus = {}
 
