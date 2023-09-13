@@ -134,6 +134,9 @@ def get_kap():
     if serviceName is None:
         return jsonify(serviceStatus), 200
     else:
+        print(f"serviceName: {serviceName}")
+        if serviceName not in serviceStatus:
+            return jsonify({'kapOk': False, 'status': "unknown", "time" : "unknown"}), 200
         return jsonify(serviceStatus[serviceName]), 200
 
 
