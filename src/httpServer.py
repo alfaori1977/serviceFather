@@ -11,6 +11,8 @@ import json
 import platform
 import datetime
 
+requests.packages.urllib3.disable_warnings()
+
 load_dotenv()  # take environment variables from .env.
 app = Flask(__name__)
 fileDir = os.path.dirname(__file__)
@@ -23,6 +25,11 @@ REPORT_IP = os.environ.get("SERVICE_FATHER_MGR_REPORT_IP", None)
 REPORT_INTERVAL_SECS = os.environ.get("SERVICE_FATHER_MGR_REPORT_INTERVAL", 2)
 HOSTNAME = platform.node()
 MAX_KAP_OFFSET = int(os.environ.get("MAX_SERVICES_KAP_OFFSET_SECONDS", 10))
+
+REPORT_DOCTOR_IP = os.environ.get("DEXYNTH_DOCTOR_REPORT_IP", "dd.dexynth.com")
+REPORT_DOCTOR_INTERVAL_SECS = int(os.environ.get("DEXYNTH_DOCTOR_REPORT_INTERVAL", 60))
+
+SF_INSTANCE= os.environ.get("SF_INSTANCE", HOSTNAME)
 
 serviceStatus = {}
 
@@ -211,18 +218,47 @@ def reportStatus():
         print(f"Failed to report status to {REPORT_IP}", flush=True)
         return
 
+"""
+REPORT_DOCTOR_IP = os.environ.get("DEXYNTH_DOCTOR_REPORT_IP", None)
+REPORT_DOCTOR_INTERVAL_SECS = os.environ.get("DEXYNTH_DOCTOR_REPORT_INTERVAL", 2)
 
-def startReportStatusThread():
-    if REPORT_IP is None:
+SF_INSTANCE= os.environ.get("SF_INSTANCE", platform.node())
+"""    
+def __reportStatusToDoctor():
+    if REPORT_DOCTOR_IP is None:
         return
+    url = f'https://{REPORT_DOCTOR_IP}/heartbeat'
+    serviceName = f"ServiceFather@{SF_INSTANCE}"
+    data = {'service': serviceName}
+    try:
+        print(f"Reporting status to {REPORT_DOCTOR_IP} from {HOSTNAME}: {data}", flush=True)
+        response = requests.post(url, json=data, verify=False, timeout=1)
+        print(f"response: {response}", flush=True)
+    except Exception as e:
+        print(f"Exception: {e}")
+        print(f"Failed to report status to {REPORT_DOCTOR_IP}", flush=True)
+        return
+    
+def startReportStatusThread():
+    def reportStatusToDoctorThread():
+        while True:
+            print(f"  >> reportStatusToDoctorThread", flush=True)
+            __reportStatusToDoctor()            
+            time.sleep(REPORT_DOCTOR_INTERVAL_SECS)
 
     def reportStatusThread():
         while True:
-            reportStatus()
+            reportStatus()            
             time.sleep(REPORT_INTERVAL_SECS)
 
-    x = threading.Thread(target=reportStatusThread, args=())
-    x.start()
+    if REPORT_IP is not None:
+        x = threading.Thread(target=reportStatusThread, args=())
+        x.start()
+
+    if REPORT_DOCTOR_IP is not None:
+        print(f"Starting reportStatusToDoctorThread")
+        x = threading.Thread(target=reportStatusToDoctorThread, args=())
+        x.start()
 
 
 if __name__ == '__main__':
