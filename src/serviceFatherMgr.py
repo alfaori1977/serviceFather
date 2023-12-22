@@ -100,6 +100,8 @@ def perform_post():
     print("data: ", data)
     sfIp = data.get('ip')
     sfPort = data.get('port')
+    data['token'] = TOKEN_ID
+    print(f"sfIp: {sfIp}, sfPort: {sfPort}")
     try:
         url = f'https://{sfIp}:{sfPort}/api'
         print(f"URL: {url}")
@@ -142,6 +144,7 @@ def startStatusThread():
 
 
 SRV_PORT = os.environ.get("SERVICE_FATHER_MGR_PORT", 15001)
+TOKEN_ID = os.environ.get("TOKEN_ID", "1234567890")
 
 if __name__ == '__main__':
     # run updateStatus() every 5 seconds in a Thread usin python Threads

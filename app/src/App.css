@@ -36,3 +36,21 @@
     transform: rotate(360deg);
   }
 }
+
+/* Style for unknown route */
+.unknown {
+  color: rgb(255, 195, 195);
+  font-size: 2rem;
+  text-align: center;
+}
+.disabled {
+  color: rgb(248, 190, 15);
+  font-size: 2rem;
+  text-align: center;
+}
+.service{
+  color: rgb(11, 126, 0);
+  font-size: 2rem;
+  font-weight: bold;
+  text-align: center;
+}

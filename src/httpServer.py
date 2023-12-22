@@ -22,7 +22,7 @@ print(f"servicesDir: {servicesDir}")
 PORT = os.environ.get("SERVICE_FATHER_PORT", 16000)
 EXPECTED_TOKEN_ID = os.environ.get("SERVICE_FATHER_TOKEN_ID", "")
 REPORT_IP = os.environ.get("SERVICE_FATHER_MGR_REPORT_IP", None)
-REPORT_INTERVAL_SECS = os.environ.get("SERVICE_FATHER_MGR_REPORT_INTERVAL", 2)
+REPORT_INTERVAL_SECS = int(os.environ.get("SERVICE_FATHER_MGR_REPORT_INTERVAL", 2))
 HOSTNAME = platform.node()
 MAX_KAP_OFFSET = int(os.environ.get("MAX_SERVICES_KAP_OFFSET_SECONDS", 10))
 

@@ -60,11 +60,26 @@ function Service({ srv }) {
   const toggleEnabled = () => {
     perform(srv.enabled ? "disable" : "enable");
   };
+  // check if lastUpdate field is older than 20 seconds
+  // if so, then the service is unknown
+  //
+  const isUnknown = () => {
+    const now = new Date();
+    const lastUpdate = new Date(srv.lastUpdate);
+    const diff = now - lastUpdate;
+    const seconds = diff / 1000;
+    return seconds > 20;
+  };
 
+  const getClassName = () => {
+    if (isUnknown()) return "unknown";
+    if (srv?.enabled) return "service";
+    return "disabled";
+  };
   return (
     <div
       key={srv.id}
-      className="service"
+      className={getClassName()}
       style={{
         display: "flex",
         justifyContent: "space-between",
@@ -99,10 +114,33 @@ function Service({ srv }) {
         {srv.enabled ? "Disable" : "Enable"}
       </button>
 
-      <img src={statusImg} width="20" alt="No se ve" />
-      <img src={startImg} width="28" alt="Start" onClick={start} />
-      <img src={restartImg} width="28" alt="Restart" onClick={restart} />
-      <img src={stopImg} width="28" alt="Stop" onClick={kill} />
+      <img
+        src={statusImg}
+        style={{ padding: "2px" }}
+        width="20"
+        alt="No se ve"
+      />
+      <img
+        src={startImg}
+        style={{ padding: "2px" }}
+        width="28"
+        alt="Start"
+        onClick={start}
+      />
+      <img
+        src={restartImg}
+        style={{ padding: "2px" }}
+        width="28"
+        alt="Restart"
+        onClick={restart}
+      />
+      <img
+        src={stopImg}
+        style={{ padding: "2px" }}
+        width="28"
+        alt="Stop"
+        onClick={kill}
+      />
       <div style={{ textAlign: "center", width: "70%" }}>
         {srv.statusMessage}
       </div>
